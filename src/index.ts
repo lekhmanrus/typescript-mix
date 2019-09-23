@@ -2,18 +2,18 @@ export type Constructor<T> = new (...args: any[]) => T;
 export type Mixin<T> = Constructor<T> | object;
 
 function mix(client: Constructor<any>, mixins: Mixin<any>[]) {
-  const clientKeys = Object.getOwnPropertyNames( client.prototype );
+  const clientKeys = Object.getOwnPropertyNames(client.prototype);
   for (let mixin of mixins) {
     const mixinMixables = getMixables(clientKeys, mixin);
-    Object.defineProperties( client.prototype, mixinMixables );
+    Object.defineProperties(client.prototype, mixinMixables);
   }
 }
 
 /**
  * Returns a map of mixables. That is things that can be mixed in
  */
-function getMixables(clientKeys:string[], mixin: Mixin<any>) {
-  let descriptors:PropertyDescriptorMap = {};
+function getMixables(clientKeys: string[], mixin: Mixin<any>) {
+  let descriptors: PropertyDescriptorMap = {};
   switch (typeof mixin) {
     case "object":
       descriptors = getMixables(mixin);
@@ -24,24 +24,31 @@ function getMixables(clientKeys:string[], mixin: Mixin<any>) {
   }
   return descriptors;
 
-  function getMixables(obj:object):PropertyDescriptorMap {
-    const map:PropertyDescriptorMap = {};
-    Object.getOwnPropertyNames( obj ).map( key => {
-      if( clientKeys.indexOf( key ) < 0 ) {
-        const descriptor = Object.getOwnPropertyDescriptor( obj, key );
-        if( descriptor === undefined ) return
-        if( descriptor.get || descriptor.set ) {
+  function getMixables(obj: object):PropertyDescriptorMap {
+    const map: PropertyDescriptorMap = {};
+    const base = Object.getPrototypeOf(obj);
+    if (base !== Object.prototype) {
+      var baseDescriptors = getMixables(base) || {};
+      for (var i in baseDescriptors) {
+        map[i] = baseDescriptors[i];
+      }
+    }
+    Object.getOwnPropertyNames(obj).map(key => {
+      if(clientKeys.indexOf(key) < 0) {
+        const descriptor = Object.getOwnPropertyDescriptor(obj, key);
+        if(descriptor === undefined) return
+        if(descriptor.get || descriptor.set) {
           map[ key ] = descriptor;
         }
         else 
-        if ( typeof descriptor.value === "function" ) {
+        if (typeof descriptor.value === "function") {
           map[ key ] = descriptor;
         }
       }
     })
     return map;
   }
-  
+
 }
 
 /**
@@ -55,7 +62,7 @@ export function use(...options: Mixin<any>[]) {
 }
 
 /**
- * Takes a method as a parameter and add it to the class calling it. 
+ * Takes a method as a parameter and add it to the class calling it.
  */
 export function delegate(method: (...args: any[]) => any) {
   return function (target: any, propertyKey: string) {

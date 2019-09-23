@@ -24,6 +24,13 @@ function getMixables(clientKeys, mixin) {
     return descriptors;
     function getMixables(obj) {
         var map = {};
+        var base = Object.getPrototypeOf(obj);
+        if (base !== Object.prototype) {
+          var baseDescriptors = getMixables(base) || {};
+          for (var i in baseDescriptors) {
+            map[i] = baseDescriptors[i];
+          }
+        }
         Object.getOwnPropertyNames(obj).map(function (key) {
             if (clientKeys.indexOf(key) < 0) {
                 var descriptor = Object.getOwnPropertyDescriptor(obj, key);
